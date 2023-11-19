@@ -1,0 +1,149 @@
+---
+title: "Programming Assignment 1"
+output: html_document
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+#Install and load required packages
+#chooseCRANmirror()
+#install.packages(c("dplyr", "ggplot2"))
+#install.packages("dplyr")
+#install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+
+
+#Read the data
+data <- read.csv("/Users/ahmedsameh/Downloads/Proteinea/L&D/R/prog-assignmrnt/RepData_PeerAssessment1/activity.csv")
+data <- na.omit(data)
+#Filter data
+df_filtered <- data %>% filter(steps != 0)
+
+#Group data by date
+grouped_data <- df_filtered %>% group_by(date)
+
+#Calculate mean, median, and total values
+mean_values <- tapply(grouped_data$steps, grouped_data$date, mean)
+median_values <- tapply(grouped_data$steps, grouped_data$date, median)
+total_values <- tapply(grouped_data$steps, grouped_data$date, sum)
+
+cat('Average number of steps for each day:',mean_values)
+cat('Median number of steps for each day:',median_values)
+cat('Total number of steps for each day:',total_values)
+
+#Plot total number of steps each day
+cat('The Number of steps per each day')
+ggplot(df_filtered, aes(x = date, y = steps)) +
+  geom_bar(stat = "summary", fun = "sum", position = "identity") +
+  labs(title = "Total Number of steps each day", x = "Date", y = "Total Number of steps") +
+  scale_fill_manual(values = c("lightblue", "lightgreen")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+#Plot average number of steps per interval
+cat('The Number of steps per each time interval')
+ggplot(df_filtered, aes(x = interval, y = steps)) +
+  geom_bar(stat = "summary", fun = "mean", position = "identity") +
+  labs(title = "Average Number of steps per interval", x = "Intervals", y = "Total Number of steps") +
+  scale_fill_manual(values = c("lightblue", "lightgreen")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+#Calculate average steps per interval
+average_steps_per_interval = tapply(df_filtered$steps, df_filtered$interval, mean)
+avg_steps_df <- as.data.frame(average_steps_per_interval)
+
+#Time series
+max_value <- max(average_steps_per_interval)
+max_index <- which(average_steps_per_interval == max_value, arr.ind = TRUE)
+max_group <- rownames(average_steps_per_interval)[max_index[1, 1]]
+cat('The time interval with most number of steps is: ',max_group)
+
+cat('Time series')
+plot(average_steps_per_interval, type = "l", col = "darkblue", xlab = "Time intervals", ylab = "Mean value of steps", main = "Time Series Plot", xaxt = "n")
+axis(1, at = seq_along(average_steps_per_interval), labels = names(average_steps_per_interval), las = 2)
+
+
+"----------------------------------------------------------------------------"
+cat('Now, for the data after replacing the NA values with the average of number of steps per interval')
+
+#Reading the csv file
+data_with_zeros <- read.csv("/Users/ahmedsameh/Downloads/Proteinea/L&D/R/prog-assignmrnt/RepData_PeerAssessment1/activity.csv")
+
+#Total number of  missing values
+total_missing_values <- sum(is.na(data_with_zeros))
+
+#Replacing the NA values with zeros
+data_with_zeros <- na.omit(data)
+
+#Replacing the zeros with the average of eacj interval
+df_mutated <- data_with_zeros %>%
+  group_by(interval) %>%
+  mutate(steps = ifelse(steps == 0, mean(steps, na.rm = TRUE), steps))
+
+#The mean, median, and total for each group
+mean_values_new <- tapply(df_mutated$steps, df_mutated$date, mean)
+median_values_new <- tapply(df_mutated$steps, df_mutated$date, median)
+total_values_new <- tapply(df_mutated$steps, df_mutated$date, sum)
+
+cat('Average number of steps for each day:',mean_values_new)
+cat('Median number of steps for each day:',median_values_new)
+cat('Total number of steps for each day:',total_values_new)
+
+#Find and plot the interval with the maximum average steps
+cat('The Number of steps per each day')
+ggplot(df_mutated, aes(x = df_mutated$date, y = df_mutated$steps)) +
+  geom_bar(stat = "summary", fun = "sum", position = "identity") +
+  labs(title = "Total Number of steps each day", x = "Date", y = "Total Number of steps") +
+  scale_fill_manual(values = c("lightblue", "lightgreen")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+cat('The Number of steps per each time interval')
+ggplot(df_mutated, aes(x = df_mutated$interval, y = df_mutated$steps)) +
+  geom_bar(stat = "summary", fun = "mean", position = "identity") +
+  labs(title = "Average Number of steps per interval", x = "Intervals", y = "Total Number of steps") +
+  scale_fill_manual(values = c("lightblue", "lightgreen")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+#Most time intervals with max nymber of steps
+average_steps_per_interval_mutated = tapply(df_mutated$steps, df_mutated$interval, mean)
+avg_steps_df_mutated <- as.data.frame(average_steps_per_interval_mutated)
+max_value_m <- max(average_steps_per_interval_mutated)
+max_index_m <- which(average_steps_per_interval_mutated == max_value, arr.ind = TRUE)
+max_group_m <- rownames(average_steps_per_interval_mutated)[max_index[1, 1]]
+cat('The time interval with most number of steps is: ',max_group_m)
+
+#Time series
+cat('Time series')
+plot(average_steps_per_interval_mutated, type = "l", col = "darkblue", xlab = "Time intervals", ylab = "Mean value of steps", main = "Time Series Plot", xaxt = "n")
+axis(1, at = seq_along(average_steps_per_interval_mutated), labels = names(average_steps_per_interval_mutated), las = 2)
+
+#WeekDays Vs WeekEnds
+cat('WeekDays Vs WeekEnds')
+
+Date = as.Date(df_mutated$date)
+weekdays = weekdays(Date)
+df_mutated$WeekDays = weekdays
+
+WeekDays = c("Monday","Sunday","Thursday","Tuesday","Wednesday")
+WeekEnds = c("Saturday","Friday")
+
+df_weekdays <- df_mutated %>%
+  filter(WeekDays %in% WeekDays)
+  
+df_weekends <- df_mutated %>%
+  filter(WeekDays %in% WeekEnds)
+
+
+average_steps_per_interval_weekdays = tapply(df_weekdays$steps, df_weekdays$interval, mean)
+average_steps_per_interval_weekends = tapply(df_weekends$steps, df_weekends$interval, mean)
+
+par(mfrow = c(2, 1))
+plot(average_steps_per_interval_weekdays, type = "l", col = "darkblue", xlab = "Time intervals", ylab = "Mean value of steps", main = "Time Series Plot (Week Days)", xaxt = "n")
+axis(1, at = seq_along(average_steps_per_interval_weekdays), labels = names(average_steps_per_interval_weekdays), las = 2)
+plot(average_steps_per_interval_weekends, type = "l", col = "darkblue", xlab = "Time intervals", ylab = "Mean value of steps", main = "Time Series Plot (Week Ends)", xaxt = "n")
+axis(1, at = seq_along(average_steps_per_interval_weekends), labels = names(average_steps_per_interval_weekends), las = 2)
+
+
+```
